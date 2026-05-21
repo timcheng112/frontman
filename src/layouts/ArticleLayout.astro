@@ -15,6 +15,7 @@ const {
   stickyTitle = ""
 } = Astro.props;
 const homeHref = withBase("/");
+const logoSrc = withBase("/images/frontman-logo.png");
 ---
 
 <!doctype html>
@@ -32,7 +33,7 @@ const homeHref = withBase("/");
           <a class="article-backlink" href={homeHref}>← Back to all issues</a>
           <a class="article-badge" href={homeHref} aria-label="Frontman home">
             <img
-              src="/images/frontman-logo.png"
+              src={logoSrc}
               alt="Frontman logo"
               width="36"
               height="36"

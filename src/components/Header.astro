@@ -2,13 +2,14 @@
 import { withBase } from "../utils/paths";
 
 const homeHref = withBase("/");
+const logoSrc = withBase("/images/frontman-logo.png");
 ---
 
 <header class="header">
   <a class="brand" href={homeHref}>
     <img
       class="brand-avatar"
-      src="/images/frontman-logo.png"
+      src={logoSrc}
       alt="Frontman logo"
       width="48"
       height="48"

@@ -1,11 +1,13 @@
 ---
 import SparklesIcon from "./icons/Sparkles.astro";
+import { withBase } from "../utils/paths";
 
 interface Props {
   latestHref?: string;
 }
 
 const { latestHref } = Astro.props;
+const mascotSrc = withBase("/images/frontman-mascot.png");
 ---
 
 <section class="hero">
@@ -34,7 +36,7 @@ const { latestHref } = Astro.props;
 
   <div class="hero-art">
     <img
-      src="/images/frontman-mascot.png"
+      src={mascotSrc}
       alt="Frontman mascot illustration"
       width="1254"
       height="1254"
