@@ -1,0 +1,113 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatDigestDate } from "../utils/digests";
+import { withBase } from "../utils/paths";
+
+interface Props {
+  digest: CollectionEntry<"digests">;
+}
+
+const { digest } = Astro.props;
+const href = withBase(`/digests/${digest.id}/`);
+---
+
+<a class="latest-link" href={href}>
+  <article class="latest-card">
+    <div class="section-topline">
+      <div class="tag-row">
+        {digest.data.tags.map((tag) => (
+          <span class="tag">{tag}</span>
+        ))}
+      </div>
+      <p class="meta-row">
+        <span>{formatDigestDate(digest.data.pubDate, "long")}</span>
+        {digest.data.readTime && <span>· {digest.data.readTime}</span>}
+      </p>
+    </div>
+
+    <h2>{digest.data.title}</h2>
+    <p class="summary">{digest.data.description}</p>
+    <p class="cta">Read digest →</p>
+  </article>
+</a>
+
+<style>
+  .latest-link {
+    display: block;
+    text-decoration: none;
+  }
+
+  .latest-card {
+    display: grid;
+    gap: 1.25rem;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border-radius: 1.5rem;
+    border: 1px solid var(--border-subtle);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 253, 247, 0.98));
+    box-shadow: 0 18px 36px rgba(30, 41, 59, 0.08);
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .latest-link:hover .latest-card {
+    transform: translateY(-4px);
+    border-color: rgba(37, 99, 235, 0.42);
+    box-shadow: 0 22px 42px rgba(37, 99, 235, 0.13);
+  }
+
+  .section-topline {
+    display: grid;
+    gap: 0.95rem;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--soft-blue);
+    color: var(--accent-primary);
+  }
+
+  .meta-row {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  h2 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+    max-width: 16ch;
+  }
+
+  .summary {
+    margin: 0;
+    max-width: 44rem;
+    color: var(--text-secondary);
+    font-size: 1.06rem;
+    line-height: 1.8;
+  }
+
+  .cta {
+    margin: 0;
+    color: var(--accent-primary);
+    font-weight: 600;
+    transition: transform 180ms ease;
+  }
+
+  .latest-link:hover .cta {
+    transform: translateX(0.35rem);
+  }
+</style>

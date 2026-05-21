@@ -1,0 +1,186 @@
+---
+import SparklesIcon from "./icons/Sparkles.astro";
+
+interface Props {
+  latestHref?: string;
+}
+
+const { latestHref } = Astro.props;
+---
+
+<section class="hero">
+  <div class="hero-copy">
+    <p class="status-pill">
+      <SparklesIcon />
+      <span>Curated weekly · Updated every Monday · Frontend + AI</span>
+    </p>
+    <h1>Frontend + AI, without the noise.</h1>
+    <p class="hero-description">
+      Frontman scans the week’s frontend and AI churn, then curates the updates that matter to engineers:
+      practical platform changes, framework movement, tooling shifts, and what is worth learning next.
+    </p>
+
+    <div class="hero-actions">
+      {latestHref ? (
+        <a class="button button-primary" href={latestHref}>Read latest digest</a>
+      ) : (
+        <a class="button button-primary button-disabled" href="#archive" aria-disabled="true">
+          Read latest digest
+        </a>
+      )}
+      <a class="button button-secondary" href="#archive">View all issues</a>
+    </div>
+  </div>
+
+  <div class="hero-art">
+    <img
+      src="/images/frontman-mascot.png"
+      alt="Frontman mascot illustration"
+      width="1254"
+      height="1254"
+    />
+  </div>
+</section>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(16rem, 0.85fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+    padding: clamp(1.4rem, 2.8vw, 2.1rem) 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .hero-copy {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: fit-content;
+    margin: 0;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    background: var(--soft-blue);
+    color: var(--accent-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .status-pill :global(svg) {
+    width: 0.9rem;
+    height: 0.9rem;
+    flex: none;
+  }
+
+  h1 {
+    font-size: clamp(2.9rem, 8vw, 4.9rem);
+    line-height: 0.94;
+    letter-spacing: -0.055em;
+    max-width: 9ch;
+  }
+
+  .hero-description {
+    max-width: 40rem;
+    color: var(--text-secondary);
+    font-size: 1.08rem;
+    line-height: 1.8;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    margin-top: 0.4rem;
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.85rem 1.25rem;
+    border-radius: 0.85rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease;
+  }
+
+  .button:hover {
+    transform: translateY(-2px);
+  }
+
+  .button-primary {
+    background: var(--accent-primary);
+    color: white;
+    box-shadow: 0 14px 28px rgba(37, 99, 235, 0.2);
+  }
+
+  .button-primary:hover {
+    box-shadow: 0 18px 36px rgba(37, 99, 235, 0.24);
+  }
+
+  .button-secondary {
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .button-secondary:hover {
+    border-color: rgba(37, 99, 235, 0.28);
+    box-shadow: 0 10px 24px rgba(30, 41, 59, 0.08);
+  }
+
+  .button-disabled {
+    opacity: 0.7;
+  }
+
+  .hero-art {
+    position: relative;
+  }
+
+  .hero-art img {
+    width: min(100%, 32rem);
+    height: auto;
+    margin-left: auto;
+    filter: drop-shadow(0 24px 48px rgba(30, 41, 59, 0.12));
+  }
+
+  @media (max-width: 960px) {
+    .hero {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-copy {
+      justify-items: center;
+      text-align: center;
+    }
+
+    h1 {
+      max-width: 11ch;
+    }
+
+    .hero-description {
+      max-width: 34rem;
+    }
+
+    .hero-actions {
+      justify-content: center;
+    }
+
+    .hero-art img {
+      width: min(100%, 24rem);
+      height: auto;
+      margin: 0 auto;
+    }
+  }
+</style>

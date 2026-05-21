@@ -1,0 +1,110 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatDigestDate } from "../utils/digests";
+import { withBase } from "../utils/paths";
+
+interface Props {
+  digest: CollectionEntry<"digests">;
+}
+
+const { digest } = Astro.props;
+const href = withBase(`/digests/${digest.id}/`);
+---
+
+<a class="digest-card-link" href={href}>
+  <article class="digest-card">
+    <div class="digest-meta">
+      <div class="digest-tags">
+        {digest.data.tags.map((tag) => (
+          <span class="tag">{tag}</span>
+        ))}
+      </div>
+      <p class="date-row">
+        <span>{formatDigestDate(digest.data.pubDate)}</span>
+        {digest.data.readTime && <span>· {digest.data.readTime}</span>}
+      </p>
+    </div>
+
+    <h3>{digest.data.title}</h3>
+    <p class="digest-copy">{digest.data.description}</p>
+    <p class="digest-cta">Read digest →</p>
+  </article>
+</a>
+
+<style>
+  .digest-card-link {
+    display: block;
+    text-decoration: none;
+  }
+
+  .digest-card {
+    height: 100%;
+    display: grid;
+    gap: 1rem;
+    padding: 1.4rem;
+    border-radius: 1.25rem;
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-soft);
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .digest-card-link:hover .digest-card {
+    transform: translateY(-4px);
+    border-color: rgba(37, 99, 235, 0.38);
+    box-shadow: 0 16px 32px rgba(37, 99, 235, 0.1);
+  }
+
+  .digest-meta {
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .digest-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    background: var(--soft-blue);
+    color: var(--accent-primary);
+  }
+
+  .date-row {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+  }
+
+  h3 {
+    font-size: clamp(1.2rem, 2vw, 1.45rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+
+  .digest-copy {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.75;
+  }
+
+  .digest-cta {
+    margin: 0;
+    color: var(--accent-primary);
+    font-weight: 600;
+    transition: transform 180ms ease;
+  }
+
+  .digest-card-link:hover .digest-cta {
+    transform: translateX(0.25rem);
+  }
+</style>

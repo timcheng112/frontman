@@ -1,0 +1,155 @@
+---
+import { getCollection, render } from "astro:content";
+import ArticleLayout from "../../layouts/ArticleLayout.astro";
+import { formatDigestDate } from "../../utils/digests";
+import { withBase } from "../../utils/paths";
+
+export async function getStaticPaths() {
+  const digests = await getCollection("digests");
+
+  return digests.map((digest) => ({
+    params: { slug: digest.id },
+    props: { digest }
+  }));
+}
+
+const { digest } = Astro.props;
+const { Content } = await render(digest);
+const homeHref = withBase("/");
+---
+
+<ArticleLayout
+  title={`${digest.data.title} | Frontman`}
+  description={digest.data.description}
+  stickyTitle={digest.data.title}
+>
+  <article class="article-frame">
+    <header class="article-header">
+      {digest.data.tags.length > 0 && (
+        <div class="tag-row">
+          {digest.data.tags.map((tag) => (
+            <span class="tag">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      <h1>{digest.data.title}</h1>
+
+      <div class="meta-row">
+        <span>{formatDigestDate(digest.data.pubDate, "long")}</span>
+        {digest.data.readTime && <span>· {digest.data.readTime} read</span>}
+      </div>
+
+      <p class="summary">{digest.data.description}</p>
+    </header>
+
+    <div class="prose article-prose">
+      <Content />
+    </div>
+
+    <div class="article-endcap">
+      <a class="bottom-backlink" href={homeHref}>← Back to all issues</a>
+    </div>
+  </article>
+</ArticleLayout>
+
+<style>
+  .article-frame {
+    max-width: 50rem;
+    margin: 0 auto;
+  }
+
+  .article-header {
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.72rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--soft-blue);
+    color: var(--accent-primary);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2.5rem, 5.8vw, 4.4rem);
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    max-width: 12ch;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+
+  .summary {
+    margin: 1rem 0 0;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    max-width: 44rem;
+    font-size: 1.08rem;
+  }
+
+  .article-prose {
+    max-width: 48rem;
+  }
+
+  .article-prose :global(h2) {
+    margin-top: 2.75rem;
+  }
+
+  .article-prose :global(h3) {
+    margin-top: 2rem;
+  }
+
+  .article-prose :global(img) {
+    border-radius: 1rem;
+  }
+
+  .article-endcap {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .bottom-backlink {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.9rem;
+    padding: 0.8rem 1rem;
+    border-radius: 0.9rem;
+    border: 1px solid var(--border-subtle);
+    background: var(--surface);
+    color: var(--accent-primary);
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .bottom-backlink:hover {
+    transform: translateX(-2px);
+    border-color: rgba(37, 99, 235, 0.32);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
+  }
+</style>

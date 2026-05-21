@@ -1,0 +1,199 @@
+---
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+import { withBase } from "../utils/paths";
+
+interface Props {
+  title: string;
+  description?: string;
+  stickyTitle?: string;
+}
+
+const {
+  title,
+  description = "A weekly frontend and AI engineering digest.",
+  stickyTitle = ""
+} = Astro.props;
+const homeHref = withBase("/");
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <div class="article-shell">
+      <header class="article-topbar">
+        <div class="article-topbar-inner">
+          <a class="article-backlink" href={homeHref}>← Back to all issues</a>
+          <a class="article-badge" href={homeHref} aria-label="Frontman home">
+            <img
+              src="/images/frontman-logo.png"
+              alt="Frontman logo"
+              width="36"
+              height="36"
+            />
+          </a>
+        </div>
+        <div class="article-collapsed-row" aria-hidden={stickyTitle ? "false" : "true"}>
+          <p class="article-collapsed-title">{stickyTitle}</p>
+        </div>
+      </header>
+
+      <main class="article-main">
+        <slot />
+      </main>
+
+      <Footer />
+    </div>
+    {
+      stickyTitle && (
+        <script
+          is:inline
+          set:html={`
+            const syncCollapsedHeader = () => {
+              const topbar = document.querySelector(".article-topbar");
+              const articleHeader = document.querySelector(".article-header");
+              const topbarInner = document.querySelector(".article-topbar-inner");
+              if (!topbar || !articleHeader || !topbarInner) return;
+
+              const threshold = topbarInner.getBoundingClientRect().height + 12;
+              const shouldCollapse = articleHeader.getBoundingClientRect().bottom <= threshold;
+              topbar.classList.toggle("is-collapsed", shouldCollapse);
+            };
+
+            syncCollapsedHeader();
+            window.addEventListener("scroll", syncCollapsedHeader, { passive: true });
+            window.addEventListener("resize", syncCollapsedHeader);
+          `}
+        />
+      )
+    }
+  </body>
+</html>
+
+<style>
+  .article-shell {
+    width: min(calc(100% - 2rem), 72rem);
+    margin: 0 auto;
+    padding: 0 0 4rem;
+  }
+
+  .article-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(14px);
+  }
+
+  .article-topbar-inner {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 0 1rem;
+    border-bottom: 1px solid rgba(234, 220, 198, 0.9);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 247, 234, 0.95) 0%,
+      rgba(255, 247, 234, 0.9) 100%
+    );
+  }
+
+  .article-collapsed-row {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 0;
+    border-bottom: 1px solid transparent;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 247, 234, 0.95) 0%,
+      rgba(255, 247, 234, 0.9) 100%
+    );
+    transition:
+      max-height 220ms ease,
+      opacity 180ms ease,
+      border-color 180ms ease,
+      padding 220ms ease;
+  }
+
+  .article-collapsed-title {
+    margin: 0;
+    min-width: 0;
+    text-align: left;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .article-topbar.is-collapsed .article-collapsed-row {
+    max-height: 4rem;
+    opacity: 1;
+    padding: 0.55rem 0 0.9rem;
+    border-bottom-color: rgba(234, 220, 198, 0.9);
+  }
+
+  .article-backlink {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: color 180ms ease, transform 180ms ease;
+  }
+
+  .article-backlink:hover {
+    color: var(--text-primary);
+    transform: translateX(-2px);
+  }
+
+  .article-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 10px 24px rgba(30, 41, 59, 0.08);
+    overflow: hidden;
+  }
+
+  .article-badge img {
+    width: 100%;
+    height: auto;
+  }
+
+  .article-main {
+    padding-top: 2rem;
+  }
+
+  @media (max-width: 720px) {
+    .article-shell {
+      width: min(calc(100% - 2rem), 72rem);
+    }
+
+    .article-topbar-inner {
+      gap: 0.75rem;
+      padding: 0.8rem 0 0.9rem;
+    }
+
+    .article-collapsed-title {
+      font-size: 0.88rem;
+    }
+
+    .article-topbar.is-collapsed .article-collapsed-row {
+      padding: 0.5rem 0 0.8rem;
+    }
+
+    .article-main {
+      padding-top: 1.5rem;
+    }
+  }
+</style>

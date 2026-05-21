@@ -1,0 +1,125 @@
+---
+import CodeIcon from "./icons/Code.astro";
+import NewspaperIcon from "./icons/Newspaper.astro";
+import TelegramIcon from "./icons/Telegram.astro";
+---
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-note">
+      <p class="footer-kicker">Frontman</p>
+      <p class="footer-copy">
+        A weekly digest for frontend engineers who want the practical changes, not the launch-day noise.
+      </p>
+    </div>
+
+    <div class="footer-telegram">
+      <p class="telegram-copy">Subscribe on Telegram to get notified every Monday at around 8:00 AM SGT.</p>
+      <a
+        class="telegram-link"
+        href="https://t.me/frontman_frontend_ai_digest_bot"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <TelegramIcon />
+        @frontman_frontend_ai_digest_bot
+      </a>
+    </div>
+
+    <div class="divider" />
+
+    <div class="footer-meta">
+      <CodeIcon />
+      <p>Curated weekly by Frontman</p>
+      <NewspaperIcon />
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .footer-inner {
+    display: grid;
+    gap: 1rem;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .footer-kicker {
+    margin: 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+    font-weight: 600;
+  }
+
+  .footer-copy {
+    margin: 0.45rem 0 0;
+    max-width: 40rem;
+    color: var(--text-secondary);
+  }
+
+  .footer-telegram {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .telegram-copy {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+
+  .telegram-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    color: var(--accent-primary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 180ms ease, text-decoration-color 180ms ease;
+  }
+
+  .telegram-link:hover {
+    text-decoration: underline;
+  }
+
+  .telegram-link :global(svg) {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+  }
+
+  .divider {
+    width: min(16rem, 100%);
+    height: 1px;
+    background: var(--border-subtle);
+  }
+
+  .footer-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+  }
+
+  .footer-meta p {
+    margin: 0;
+  }
+
+  .footer-meta :global(svg) {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+  }
+</style>

@@ -1,0 +1,138 @@
+---
+import { getCollection } from "astro:content";
+import DigestCard from "../components/DigestCard.astro";
+import Hero from "../components/Hero.astro";
+import LatestDigestCard from "../components/LatestDigestCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { withBase } from "../utils/paths";
+
+const digests = (await getCollection("digests")).sort(
+  (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime()
+);
+const latestDigest = digests[0];
+const olderDigests = digests.slice(1);
+---
+
+<BaseLayout
+  title="Frontman"
+  description="A lightweight frontend and AI digest for engineers who want practical weekly updates."
+>
+  <Hero latestHref={latestDigest ? withBase(`/digests/${latestDigest.id}/`) : undefined} />
+
+  {latestDigest ? (
+    <>
+      <section class="latest-section" aria-labelledby="latest-digest-heading">
+        <div class="section-heading">
+          <h2 id="latest-digest-heading">Latest Digest</h2>
+          <span class="new-badge">New</span>
+        </div>
+        <LatestDigestCard digest={latestDigest} />
+      </section>
+
+      <section id="archive" class="archive-section" aria-labelledby="previous-issues-heading">
+        <div class="section-heading">
+          <h2 id="previous-issues-heading">Previous Issues</h2>
+        </div>
+
+        {olderDigests.length > 0 ? (
+          <div class="archive-grid">
+            {olderDigests.map((digest) => (
+              <DigestCard digest={digest} />
+            ))}
+          </div>
+        ) : (
+          <div class="empty-state">
+            <p class="empty-title">The archive is just getting started.</p>
+            <p class="empty-copy">
+              New issues will appear here as Frontman publishes more weekly digests.
+            </p>
+          </div>
+        )}
+      </section>
+    </>
+  ) : (
+    <section id="archive" class="empty-state empty-state-large">
+      <p class="eyebrow">No Issues Yet</p>
+      <h2>The first Frontman digest has not been published yet.</h2>
+      <p class="empty-copy">
+        Once a digest lands in the content collection, this page will automatically feature the newest
+        issue and build the archive below it.
+      </p>
+    </section>
+  )}
+</BaseLayout>
+
+<style>
+  .latest-section,
+  .archive-section {
+    padding-top: 2.5rem;
+  }
+
+  .archive-section {
+    padding-top: 2rem;
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.15rem;
+  }
+
+  .section-heading h2 {
+    font-size: clamp(1.7rem, 3vw, 2.1rem);
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+  }
+
+  .new-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.32rem 0.65rem;
+    background: var(--accent-teal);
+    color: white;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .archive-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .empty-state {
+    padding: 1.5rem;
+    border: 1px dashed var(--border-subtle);
+    border-radius: 1.25rem;
+    background: rgba(255, 253, 247, 0.72);
+  }
+
+  .empty-state-large {
+    margin-top: 2rem;
+    padding: 2rem;
+  }
+
+  .empty-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .empty-copy {
+    margin: 0.5rem 0 0;
+    max-width: 42rem;
+    color: var(--text-secondary);
+    line-height: 1.75;
+  }
+
+  @media (max-width: 840px) {
+    .archive-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
