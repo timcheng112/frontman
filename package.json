@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "generate:digest": "node --experimental-strip-types scripts/generate-digest.ts",
-    "generate:digest:llm": "node --experimental-strip-types scripts/generate-digest-llm.ts"
+    "generate:digest:llm": "node --experimental-strip-types scripts/generate-digest-llm.ts",
+    "notify:telegram": "node --experimental-strip-types scripts/send-telegram-notification.ts"
   },
   "dependencies": {
     "astro": "^5.0.0"

@@ -166,6 +166,50 @@ The workflow defaults to `gpt-5.4-mini` if that variable is not set.
 6. Confirm the workflow commits a new digest file to `main`.
 7. Confirm the `Generate Weekly Digest` workflow completes its build and deploy jobs and publishes the updated site.
 
+## Telegram notification
+
+Phase 6 adds a Telegram notification after a successful automated digest deploy.
+
+### Files involved
+
+- `scripts/send-telegram-notification.ts`
+- `.github/workflows/generate-digest.yml`
+
+### Required GitHub configuration
+
+Repository secrets:
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_CHAT_ID`
+
+The notification step will skip cleanly if either secret is missing.
+
+### What the notification does
+
+- runs only after the weekly digest workflow generates a new digest and deploys the updated site
+- reads the generated digest frontmatter
+- builds a Telegram message with the digest title, publication date, description, and live URL
+- sends the message with the Telegram Bot API using `sendMessage` and `parse_mode=HTML`
+
+### Local verification
+
+The helper script can be exercised locally without sending a real message by leaving the Telegram environment variables unset:
+
+```bash
+npm run notify:telegram
+```
+
+Expected output:
+
+- It prints that Telegram notification is being skipped because the bot token or chat ID is not configured.
+
+### GitHub verification
+
+1. Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to repository secrets.
+2. Run `Generate Weekly Digest` from GitHub Actions with a test date if needed.
+3. Confirm the workflow completes `generate`, `build`, `deploy`, and `notify`.
+4. Confirm the target Telegram chat receives the digest notification with a working digest link.
+
 ## Production build
 
 ```bash

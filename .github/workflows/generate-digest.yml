@@ -60,6 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
+      digest_path: ${{ steps.digest.outputs.path }}
 
     steps:
       - name: Checkout repository
@@ -120,6 +121,13 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Capture generated digest path
+        id: digest
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          digest_path="$(git status --short -- src/content/digests | awk '{print $2}' | head -n 1)"
+          echo "path=$digest_path" >> "$GITHUB_OUTPUT"
+
       - name: Commit generated digest
         if: steps.changes.outputs.changed == 'true'
         run: |
@@ -154,6 +162,8 @@ jobs:
     needs: [generate, build]
     if: needs.generate.outputs.changed == 'true'
     runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
 
     environment:
       name: github-pages
@@ -163,3 +173,43 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  notify:
+    needs: [generate, deploy]
+    if: needs.generate.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build notification URL
+        id: notification
+        env:
+          DIGEST_PATH: ${{ needs.generate.outputs.digest_path }}
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          digest_slug="$(basename "$DIGEST_PATH" .md)"
+          page_url="${PAGE_URL%/}/"
+          echo "url=${page_url}digests/${digest_slug}/" >> "$GITHUB_OUTPUT"
+
+      - name: Send Telegram notification
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FRONTMAN_DIGEST_PATH: ${{ needs.generate.outputs.digest_path }}
+          FRONTMAN_DIGEST_URL: ${{ steps.notification.outputs.url }}
+        run: npm run notify:telegram
+        if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
+
+      - name: Skip Telegram notification
+        if: ${{ secrets.TELEGRAM_BOT_TOKEN == '' || secrets.TELEGRAM_CHAT_ID == '' }}
+        run: echo "Skipping Telegram notification because TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not configured."
