@@ -252,7 +252,10 @@ function normalizeRankingPlan(plan: RankingPlan, items: FeedItem[], maxItems: nu
 
   return {
     title: cleanText(plan.title, `Frontend & AI Digest — ${formatLongDate(issueDate)}`),
-    description: cleanText(plan.description, `A weekly Frontman digest for ${formatLongDate(issueDate)}.`),
+    description: clampText(
+      cleanText(plan.description, `A weekly Frontman digest for ${formatLongDate(issueDate)}.`),
+      200
+    ),
     summary: cleanText(plan.summary, "A practical roundup of frontend and AI engineering updates."),
     tags: tags.length > 0 ? tags : ["frontend", "ai"],
     selectedItemIds,
@@ -376,6 +379,14 @@ function sanitizeMarkdownBody(markdown: string) {
 function cleanText(value: string | undefined, fallback: string) {
   const text = value?.replace(/\s+/g, " ").trim();
   return text && text.length > 0 ? text : fallback;
+}
+
+function clampText(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
 main().catch((error) => {
