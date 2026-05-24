@@ -185,6 +185,9 @@ jobs:
     if: needs.generate.outputs.changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
       - name: Checkout repository
@@ -209,14 +212,12 @@ jobs:
           echo "url=${page_url}digests/${digest_slug}/" >> "$GITHUB_OUTPUT"
 
       - name: Send Telegram notification
+        if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           FRONTMAN_DIGEST_PATH: ${{ needs.generate.outputs.digest_path }}
           FRONTMAN_DIGEST_URL: ${{ steps.notification.outputs.url }}
         run: npm run notify:telegram
-        if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
 
       - name: Skip Telegram notification
-        if: ${{ secrets.TELEGRAM_BOT_TOKEN == '' || secrets.TELEGRAM_CHAT_ID == '' }}
+        if: env.TELEGRAM_BOT_TOKEN == '' || env.TELEGRAM_CHAT_ID == ''
         run: echo "Skipping Telegram notification because TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not configured."
