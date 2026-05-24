@@ -169,52 +169,29 @@ export async function writeDigestFile(issueDate: Date, markdown: string) {
 
 export function buildSimpleDigestMarkdown(items: FeedItem[], issueDate: Date, lookbackDays: number) {
   const uniqueTags = Array.from(new Set(items.flatMap((item) => item.source.tags))).slice(0, 6);
-  const sections = SOURCES.map((source) => ({
-    source,
-    items: items.filter((item) => item.source.id === source.id)
-  })).filter((section) => section.items.length > 0);
-
-  const quickScan = items
-    .slice(0, 5)
-    .map(
-      (item) =>
-        `- [${escapeMarkdown(item.title)}](${item.link}) — ${item.source.name} (${formatLongDate(item.publishedAt, {
-          year: false
-        })})`
-    )
-    .join("\n");
-
-  const sourceSections = sections
-    .map(
-      ({ source, items: sourceItems }) => `### ${source.name}
-
-${sourceItems
-  .map(
-    (item) => `- [${escapeMarkdown(item.title)}](${item.link}) — ${formatLongDate(item.publishedAt)}
-  ${item.summary}`
-  )
-  .join("\n\n")}`
-    )
+  const selectedItems = items.slice(0, 5);
+  const storyPages = selectedItems
+    .map((item) => buildSimpleStoryPage(item))
     .join("\n\n");
+  const proTips = buildSimpleProTips(selectedItems);
 
-  const body = `## This week at a glance
+  const body = `## Opening
 
-This MVP digest was generated from ${items.length} recent feed items across ${sections.length} sources.
-It is a source-first draft without LLM ranking or rewriting, so the structure is intentionally simple and easy to edit.
+Yo! Here's this week's Frontman source-first digest. I pulled ${items.length} recent items from ${new Set(
+    items.map((item) => item.source.id)
+  ).size} sources, then kept the strongest ${selectedItems.length} for a page-by-page read.
 
-## Quick scan
+This edition is still generated without LLM synthesis, so the summaries stay close to the source material. The goal is simple: give you enough signal to understand what moved this week, why it matters, and where to look closer if something clicks.
 
-${quickScan}
+${storyPages}
 
-## Source roundup
+${proTips}
 
-${sourceSections}
+## Closing Notes
 
-## Notes
+That's the wrap for ${formatLongDate(issueDate)}. The lookback window for this issue was ${lookbackDays} days, and the throughline this week is pretty clear: better systems beat accidental complexity every time.
 
-- Generated on ${formatLongDate(issueDate)}.
-- Current lookback window: ${lookbackDays} days.
-- Phase 4 can replace the simple grouping above with ranking, synthesis, and editorial writing.
+Stay curious, stay learning! 🧠
 `;
 
   const description = `A generated roundup of frontend and AI updates for ${formatLongDate(issueDate)}.`;
@@ -229,6 +206,67 @@ ${sourceSections}
     tags: uniqueTags,
     body
   });
+}
+
+function buildSimpleStoryPage(item: FeedItem) {
+  return `## News: ${escapeMarkdown(item.title)}
+
+[${escapeMarkdown(item.title)}](${item.link}) comes from ${item.source.name} and was published on ${formatLongDate(item.publishedAt)}.
+
+${normalizeSimpleSummary(item.summary)}
+
+Why it matters: ${buildSimpleWhyItMatters(item)}`;
+}
+
+function buildSimpleProTips(items: FeedItem[]) {
+  const allTags = items.flatMap((item) => item.source.tags);
+  const dominantTags = Array.from(new Set(allTags));
+  const proTips = [
+    buildSimpleProTip(
+      "Keep architecture carrying the load",
+      "When tooling or frameworks hide too much structure, teams can move fast at first and then lose track of where layout, state, or styling decisions actually belong.",
+      dominantTags.includes("frontend")
+        ? "Keep components opinionated, document the layout and styling rules you reuse, and make the owning layer of spacing, typography, and interaction obvious."
+        : "Write down the system boundaries your team depends on, then make your code structure reflect them instead of relying on accidental conventions.",
+      "Clear structure makes future changes easier for both humans and AI tools. Good code + AI = unstoppable."
+    ),
+    buildSimpleProTip(
+      "Optimize the feedback loop, not just the output",
+      "A lot of engineering drag comes from workflows that technically work but make iteration slower, noisier, or harder to reason about.",
+      dominantTags.includes("ai")
+        ? "Favor tools and patterns that shorten the loop between idea, experiment, and validation. Small wins in build speed, readability, and traceability compound fast."
+        : "Prefer simpler build steps, clearer defaults, and reusable patterns that reduce the number of moving parts you need to keep in your head.",
+      "Performance is not just runtime speed. Developer experience is part of the system too, and better feedback loops help teams level up faster."
+    )
+  ];
+
+  return proTips.join("\n\n");
+}
+
+function buildSimpleProTip(title: string, problem: string, fix: string, why: string) {
+  return `## Pro Tip: ${title}
+
+**The Problem** ${problem}
+
+**The Fix** ${fix}
+
+**Why** ${why}`;
+}
+
+function normalizeSimpleSummary(summary: string) {
+  return summary.replace(/\s+/g, " ").trim();
+}
+
+function buildSimpleWhyItMatters(item: FeedItem) {
+  if (item.source.tags.includes("frontend")) {
+    return "Frontend teams can use this to sharpen how they structure UI systems, styling decisions, or browser-facing workflows instead of treating the platform like a black box.";
+  }
+
+  if (item.source.tags.includes("ai")) {
+    return "This has direct implications for how engineers ship, evaluate, and operationalize AI-assisted workflows without adding unnecessary complexity.";
+  }
+
+  return "The practical win here is leverage: clearer systems, better workflows, and fewer hidden tradeoffs once the implementation work starts.";
 }
 
 export function buildMarkdownDocument(input: {

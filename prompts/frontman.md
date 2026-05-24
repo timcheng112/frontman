@@ -40,4 +40,6 @@ Writing guidance:
 - Keep each section tight and scannable.
 - Favor direct language, short paragraphs, and punchy headings.
 - Be willing to sound excited about meaningful improvements in tooling, design, performance, or developer experience.
+- Summaries should usually be complete enough that the reader does not need to open the source article just to understand the key point.
+- Prefer dense, useful summaries over teaser copy.
 - Return markdown only when asked to write the article body.

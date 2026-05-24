@@ -212,12 +212,17 @@ Task: Write the final Frontman article body in markdown only.
 
 Requirements:
 - Do not include YAML frontmatter.
-- Start with a level-2 heading: "## This week at a glance".
-- Follow with 2 to 4 level-2 sections based on the ranking plan.
+- Start with a level-2 heading: "## Opening".
+- After the opening, write one level-2 section per selected story using this format: "## News: <short title>".
+- After the story pages, write 2 level-2 pro tip sections using this format: "## Pro Tip: <title>".
+- End with a final level-2 heading: "## Closing Notes".
 - Mention only the selected items from the input.
 - Keep each story title linked in markdown.
-- Explain why stories matter in practical engineering terms.
-- End with a short "## What to watch" section with 2 to 3 bullets.
+- Each story summary should explain the core idea, the important details, and why it matters in practical engineering terms.
+- Each story summary should usually be detailed enough that a reader can skip the source article unless they want the full original context.
+- Each pro tip should include these bold labels in order: "**The Problem**", "**The Fix**", and "**Why**".
+- Ground pro tips in themes that genuinely emerge from the selected stories and Frontman's engineering worldview.
+- Keep the opening and closing short, warm, and energetic.
 - Do not mention the model, prompt, or that the article was AI-generated.`,
     input: writerInput,
     maxOutputTokens: 5000

@@ -82,9 +82,7 @@ async function main() {
     }
     seenWeeks.set(weekKey, fileName);
 
-    if (!markdown.includes("\n## This week at a glance")) {
-      throw new Error(`Digest body is missing the expected intro heading in ${fileName}`);
-    }
+    validateDigestStructure(fileName, markdown);
   }
 
   console.log(`Validated ${entries.length} digest file(s) in src/content/digests.`);
@@ -117,6 +115,30 @@ function parseFrontmatter(markdown: string): FrontmatterData {
   }
 
   return data;
+}
+
+function validateDigestStructure(fileName: string, markdown: string) {
+  const headings = Array.from(markdown.matchAll(/^##\s+(.+)$/gm)).map((match) => match[1].trim());
+
+  if (headings.length < 4) {
+    throw new Error(`Digest body needs at least 4 level-2 sections in ${fileName}`);
+  }
+
+  if (headings[0] !== "Opening") {
+    throw new Error(`Digest body must start with "## Opening" in ${fileName}`);
+  }
+
+  if (headings.at(-1) !== "Closing Notes") {
+    throw new Error(`Digest body must end with "## Closing Notes" in ${fileName}`);
+  }
+
+  if (!headings.some((heading) => heading.startsWith("News: ") || heading.startsWith("Story: "))) {
+    throw new Error(`Digest body must include at least one "## News: ..." section in ${fileName}`);
+  }
+
+  if (!headings.some((heading) => heading.startsWith("Pro Tip: "))) {
+    throw new Error(`Digest body must include at least one "## Pro Tip: ..." section in ${fileName}`);
+  }
 }
 
 main().catch((error) => {
