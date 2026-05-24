@@ -18,7 +18,8 @@ async function main() {
     .sort();
 
   if (entries.length === 0) {
-    throw new Error("No digest markdown files were found in src/content/digests.");
+    console.log("No digest markdown files found in src/content/digests. Empty-state mode is valid.");
+    return;
   }
 
   const seenSlugs = new Set<string>();
