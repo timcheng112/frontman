@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "check": "npm run validate:digests && npx tsc --noEmit && npm run build",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "generate:digest": "node --experimental-strip-types scripts/generate-digest.ts",
     "generate:digest:llm": "node --experimental-strip-types scripts/generate-digest-llm.ts",
-    "notify:telegram": "node --experimental-strip-types scripts/send-telegram-notification.ts"
+    "notify:telegram": "node --experimental-strip-types scripts/send-telegram-notification.ts",
+    "validate:digests": "node --experimental-strip-types scripts/validate-digests.ts"
   },
   "dependencies": {
     "astro": "^5.0.0"

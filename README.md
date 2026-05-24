@@ -25,6 +25,20 @@ Sample routes:
 
 - `http://localhost:4321/digests/2026-05-25-frontend-ai-digest/`
 
+## Repo checks
+
+Run the full hardening pass locally:
+
+```bash
+npm run check
+```
+
+This runs:
+
+- `npm run validate:digests`
+- `npx tsc --noEmit`
+- `npm run build`
+
 ## Digest generator MVP
 
 Phase 3 adds a simple source-driven generator that fetches recent feed items and writes a Markdown digest into the Astro content collection.
@@ -209,6 +223,34 @@ Expected output:
 2. Run `Generate Weekly Digest` from GitHub Actions with a test date if needed.
 3. Confirm the workflow completes `generate`, `build`, `deploy`, and `notify`.
 4. Confirm the target Telegram chat receives the digest notification with a working digest link.
+
+## Polish and hardening
+
+Phase 7 adds validation and CI guardrails around the content and automation pipeline.
+
+### Files involved
+
+- `scripts/validate-digests.ts`
+- `.github/workflows/ci.yml`
+- `.github/workflows/generate-digest.yml`
+
+### What the hardening layer does
+
+- validates every digest file in `src/content/digests/`
+- checks for required frontmatter fields
+- enforces filename date and `pubDate` alignment
+- prevents duplicate ISO-week digest files
+- checks for the expected article intro heading
+- runs CI on pushes and pull requests
+- validates generated content during the scheduled digest workflow before commit and deploy
+
+### How to verify
+
+1. Run `npm run check`.
+2. Confirm digest validation passes.
+3. Confirm type-checking passes.
+4. Confirm the Astro build passes.
+5. Push a branch or open a pull request and confirm the `CI` workflow runs the same checks in GitHub Actions.
 
 ## Production build
 

@@ -58,6 +58,7 @@ env:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     outputs:
       changed: ${{ steps.changes.outputs.changed }}
       digest_path: ${{ steps.digest.outputs.path }}
@@ -112,6 +113,9 @@ jobs:
           RUN_ARGS: ${{ steps.args.outputs.value }}
         run: npm run generate:digest:llm -- $RUN_ARGS
 
+      - name: Validate digest content
+        run: npm run validate:digests
+
       - name: Detect content changes
         id: changes
         run: |
@@ -147,6 +151,7 @@ jobs:
     needs: generate
     if: needs.generate.outputs.changed == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -162,6 +167,7 @@ jobs:
     needs: [generate, build]
     if: needs.generate.outputs.changed == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       page_url: ${{ steps.deployment.outputs.page_url }}
 
@@ -178,6 +184,7 @@ jobs:
     needs: [generate, deploy]
     if: needs.generate.outputs.changed == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
