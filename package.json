@@ -6,12 +6,15 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "generate:digest": "node --experimental-strip-types scripts/generate-digest.ts",
+    "generate:digest:llm": "node --experimental-strip-types scripts/generate-digest-llm.ts"
   },
   "dependencies": {
     "astro": "^5.0.0"
   },
   "devDependencies": {
+    "@types/node": "^24.12.4",
     "typescript": "^5.0.0"
   }
 }

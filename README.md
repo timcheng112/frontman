@@ -25,6 +25,147 @@ Sample routes:
 
 - `http://localhost:4321/digests/2026-05-25-frontend-ai-digest/`
 
+## Digest generator MVP
+
+Phase 3 adds a simple source-driven generator that fetches recent feed items and writes a Markdown digest into the Astro content collection.
+
+### Files involved
+
+- `scripts/sources.ts`
+- `scripts/generate-digest.ts`
+- `src/content/digests/`
+
+### Generate a digest
+
+```bash
+npm run generate:digest
+```
+
+Useful flags:
+
+```bash
+npm run generate:digest -- --date 2026-05-21
+npm run generate:digest -- --lookback-days 10
+npm run generate:digest -- --force
+```
+
+What the generator does:
+
+- Fetches a small set of RSS/news feeds defined in `scripts/sources.ts`
+- Filters to recent items within the configured lookback window
+- Groups links by source
+- Writes a new Markdown file into `src/content/digests/`
+- Refuses to create a second digest in the same ISO week unless `--force` is passed
+
+### Verify the generated article
+
+1. Run `npm run generate:digest`.
+2. Run `npm run build` or `npm run dev`.
+3. Confirm a new file exists in `src/content/digests/`.
+4. Open the homepage and verify the new digest appears either as the latest issue or in the archive grid, depending on its `pubDate`.
+
+## LLM ranking and writing
+
+Phase 4 adds an OpenAI-backed generator that:
+
+- fetches the same feed items as the MVP generator
+- ranks the strongest stories with a structured editorial plan
+- writes a fuller markdown article body
+- saves the result into `src/content/digests/`
+
+### Files involved
+
+- `scripts/digest-core.ts`
+- `scripts/generate-digest-llm.ts`
+- `scripts/openai.ts`
+- `prompts/frontman.md`
+
+### Required environment variable
+
+```bash
+export OPENAI_API_KEY=your_api_key_here
+```
+
+Optional configuration:
+
+```bash
+export FRONTMAN_OPENAI_MODEL=gpt-5.4-mini
+```
+
+The Phase 4 generator defaults to `gpt-5.4-mini`.
+
+### Generate an LLM-written digest
+
+```bash
+npm run generate:digest:llm
+```
+
+Useful flags:
+
+```bash
+npm run generate:digest:llm -- --date 2026-05-24
+npm run generate:digest:llm -- --skip-if-exists
+npm run generate:digest:llm -- --reasoning-effort low
+npm run generate:digest:llm -- --max-items 5
+npm run generate:digest:llm -- --model gpt-5.4-mini
+npm run generate:digest:llm -- --force
+```
+
+What the LLM generator does:
+
+- uses the Phase 3 source fetcher and duplicate-week protection
+- sends the fetched items to the OpenAI Responses API for ranking
+- asks the model to produce the final markdown body using the selected items only
+- writes Astro-compatible frontmatter plus the generated article body
+- supports `--skip-if-exists` for automation-safe reruns
+
+### Verify the LLM article
+
+1. Set `OPENAI_API_KEY`.
+2. Run `npm run generate:digest:llm`.
+3. Run `npm run build` or `npm run dev`.
+4. Confirm a new file exists in `src/content/digests/`.
+5. Open the homepage and verify the generated issue appears in the digest list.
+
+## Weekly automation
+
+Phase 5 adds scheduled GitHub Actions automation for digest generation.
+
+### Files involved
+
+- `.github/workflows/generate-digest.yml`
+- `.github/workflows/deploy.yml`
+
+### What the automation does
+
+- runs every Monday at `01:00 UTC`
+- supports manual runs through `workflow_dispatch`
+- installs dependencies, generates the weekly LLM digest, and commits it back to `main`
+- builds and deploys the updated Astro site in the same workflow after the digest commit is pushed
+- no-ops cleanly if the same ISO week already has a digest file
+
+### Required GitHub configuration
+
+Repository secret:
+
+- `OPENAI_API_KEY`
+
+Optional repository variable:
+
+- `FRONTMAN_OPENAI_MODEL`
+
+The workflow defaults to `gpt-5.4-mini` if that variable is not set.
+
+### Manual verification
+
+1. Push the repo changes to GitHub.
+2. Add the `OPENAI_API_KEY` repository secret.
+3. Open `Actions` in GitHub.
+4. Run `Generate Weekly Digest`.
+5. Optionally provide a `date` input such as `2026-05-24` and set `force` only if you intentionally want to overwrite the duplicate-week safeguard.
+6. Confirm the workflow commits a new digest file to `main`.
+7. Confirm the `Generate Weekly Digest` workflow completes its build and deploy jobs and publishes the updated site.
+
 ## Production build
 
 ```bash

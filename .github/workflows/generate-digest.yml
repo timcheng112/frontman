@@ -1,0 +1,165 @@
+name: Generate Weekly Digest
+
+on:
+  schedule:
+    - cron: "0 1 * * 1"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Optional publication date in YYYY-MM-DD"
+        required: false
+        type: string
+      lookback_days:
+        description: "How many days of source items to consider"
+        required: false
+        default: "7"
+        type: string
+      model:
+        description: "OpenAI model to use for ranking and writing"
+        required: false
+        default: "gpt-5.4-mini"
+        type: string
+      reasoning_effort:
+        description: "Reasoning effort for the Responses API"
+        required: false
+        default: "low"
+        type: choice
+        options:
+          - none
+          - minimal
+          - low
+          - medium
+          - high
+          - xhigh
+      max_items:
+        description: "Maximum number of ranked stories to include"
+        required: false
+        default: "5"
+        type: string
+      force:
+        description: "Override the duplicate-week safeguard"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: frontman-weekly-digest
+  cancel-in-progress: false
+
+env:
+  SITE_URL: ${{ vars.SITE_URL }}
+  BASE_PATH: ${{ vars.BASE_PATH }}
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build generator args
+        id: args
+        env:
+          INPUT_DATE: ${{ github.event.inputs.date || '' }}
+          INPUT_LOOKBACK_DAYS: ${{ github.event.inputs.lookback_days || '7' }}
+          INPUT_MODEL: ${{ github.event.inputs.model || 'gpt-5.4-mini' }}
+          INPUT_REASONING_EFFORT: ${{ github.event.inputs.reasoning_effort || 'low' }}
+          INPUT_MAX_ITEMS: ${{ github.event.inputs.max_items || '5' }}
+          INPUT_FORCE: ${{ github.event.inputs.force || 'false' }}
+        run: |
+          args="--skip-if-exists"
+
+          if [ -n "$INPUT_DATE" ]; then
+            args="$args --date $INPUT_DATE"
+          fi
+
+          args="$args --lookback-days $INPUT_LOOKBACK_DAYS"
+          args="$args --model $INPUT_MODEL"
+          args="$args --reasoning-effort $INPUT_REASONING_EFFORT"
+          args="$args --max-items $INPUT_MAX_ITEMS"
+
+          if [ "$INPUT_FORCE" = "true" ]; then
+            args="${args/--skip-if-exists/}"
+            args="$args --force"
+          fi
+
+          echo "value=$args" >> "$GITHUB_OUTPUT"
+
+      - name: Generate LLM digest
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          FRONTMAN_OPENAI_MODEL: ${{ vars.FRONTMAN_OPENAI_MODEL || 'gpt-5.4-mini' }}
+          RUN_ARGS: ${{ steps.args.outputs.value }}
+        run: npm run generate:digest:llm -- $RUN_ARGS
+
+      - name: Detect content changes
+        id: changes
+        run: |
+          if git status --short -- src/content/digests | grep . >/dev/null; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit generated digest
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/content/digests
+
+          digest_path="$(git diff --cached --name-only -- src/content/digests | head -n 1)"
+          digest_name="$(basename "$digest_path" .md)"
+          git commit -m "chore: publish digest ${digest_name}"
+
+      - name: Push generated digest
+        if: steps.changes.outputs.changed == 'true'
+        run: git push
+
+  build:
+    needs: generate
+    if: needs.generate.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Install, build, and upload site
+        uses: withastro/action@v6
+
+  deploy:
+    needs: [generate, build]
+    if: needs.generate.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
