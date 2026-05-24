@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { formatDigestDate } from "../utils/digests";
+import { formatDigestDate, normalizeDigestSlug } from "../utils/digests";
 
 interface MarkdownHeading {
   depth: number;
@@ -21,7 +21,7 @@ interface Props {
 
 const { digest, headings } = Astro.props;
 const pageDescriptors = buildPageDescriptors(headings);
-const readerId = `digest-reader-${digest.id}`;
+const readerId = `digest-reader-${normalizeDigestSlug(digest.slug)}`;
 
 function buildPageDescriptors(allHeadings: MarkdownHeading[]): PageDescriptor[] {
   const sectionHeadings = allHeadings.filter((heading) => heading.depth === 2);

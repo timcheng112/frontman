@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { formatDigestDate } from "../utils/digests";
+import { formatDigestDate, normalizeDigestSlug } from "../utils/digests";
 import { withBase } from "../utils/paths";
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
 }
 
 const { digest } = Astro.props;
-const href = withBase(`/digests/${digest.id}/`);
+const href = withBase(`/digests/${normalizeDigestSlug(digest.slug)}/`);
 ---
 
 <a class="digest-card-link" href={href}>

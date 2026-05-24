@@ -5,3 +5,7 @@ export function formatDigestDate(date: Date, style: "long" | "short" = "short") 
     year: style === "long" ? "numeric" : undefined
   }).format(date);
 }
+
+export function normalizeDigestSlug(value: string) {
+  return value.replace(/\.md$/i, "");
+}

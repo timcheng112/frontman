@@ -3,12 +3,13 @@ import { render } from "astro:content";
 import DigestReader from "../../components/DigestReader.astro";
 import ArticleLayout from "../../layouts/ArticleLayout.astro";
 import { getDigestCollection } from "../../utils/content";
+import { normalizeDigestSlug } from "../../utils/digests";
 
 export async function getStaticPaths() {
   const digests = await getDigestCollection();
 
   return digests.map((digest) => ({
-    params: { slug: digest.id },
+    params: { slug: normalizeDigestSlug(digest.slug) },
     props: { digest }
   }));
 }
