@@ -129,7 +129,12 @@ jobs:
         id: digest
         if: steps.changes.outputs.changed == 'true'
         run: |
-          digest_path="$(git status --short -- src/content/digests | awk '{print $2}' | head -n 1)"
+          digest_path="$(
+            git status --porcelain=v1 --untracked-files=all -- src/content/digests |
+              sed -n 's/^.. //p' |
+              grep '\.md$' |
+              head -n 1
+          )"
           echo "path=$digest_path" >> "$GITHUB_OUTPUT"
 
       - name: Commit generated digest
