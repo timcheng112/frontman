@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "clean:build": "node --experimental-strip-types scripts/clean-build.ts",
     "check": "npm run validate:digests && npx tsc --noEmit && npm run build",
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "npm run clean:build && astro build",
     "preview": "astro preview",
     "generate:digest": "node --experimental-strip-types scripts/generate-digest.ts",
     "generate:digest:llm": "node --experimental-strip-types scripts/generate-digest-llm.ts",

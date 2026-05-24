@@ -1,11 +1,12 @@
 ---
-import { getCollection, render } from "astro:content";
+import { render } from "astro:content";
 import ArticleLayout from "../../layouts/ArticleLayout.astro";
+import { getDigestCollection } from "../../utils/content";
 import { formatDigestDate } from "../../utils/digests";
 import { withBase } from "../../utils/paths";
 
 export async function getStaticPaths() {
-  const digests = await getCollection("digests");
+  const digests = await getDigestCollection();
 
   return digests.map((digest) => ({
     params: { slug: digest.id },

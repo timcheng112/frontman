@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,8 +9,10 @@ export interface FeedItem {
   source: SourceDefinition;
   title: string;
   link: string;
+  canonicalLink: string;
   publishedAt: Date;
   summary: string;
+  normalizedTitle: string;
 }
 
 export interface BaseCliOptions {
@@ -23,6 +26,11 @@ export interface SourceFetchResult {
   source: SourceDefinition;
   items: FeedItem[];
   error?: string;
+}
+
+export interface FlattenedFeedItems {
+  items: FeedItem[];
+  duplicatesRemoved: number;
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -135,9 +143,13 @@ export async function fetchRecentSourceItems(options: BaseCliOptions) {
 }
 
 export function flattenRecentItems(results: SourceFetchResult[]) {
-  return results
-    .flatMap((result) => result.items)
-    .sort((left, right) => right.publishedAt.getTime() - left.publishedAt.getTime());
+  const allItems = results.flatMap((result) => result.items);
+  const dedupedItems = dedupeFeedItems(allItems);
+
+  return {
+    items: dedupedItems.items.sort((left, right) => right.publishedAt.getTime() - left.publishedAt.getTime()),
+    duplicatesRemoved: dedupedItems.duplicatesRemoved
+  } satisfies FlattenedFeedItems;
 }
 
 export function buildDigestSlug(issueDate: Date) {
@@ -323,7 +335,7 @@ function parseRssFeed(xml: string, source: SourceDefinition) {
   const itemBlocks = xml.match(/<item\b[\s\S]*?<\/item>/gi) ?? [];
 
   return itemBlocks
-    .map((block, index) => {
+    .map((block) => {
       const title = getFirstTagValue(block, ["title"]);
       const link = getFirstTagValue(block, ["link"]);
       const publishedRaw = getFirstTagValue(block, ["pubDate", "dc:date"]);
@@ -335,12 +347,14 @@ function parseRssFeed(xml: string, source: SourceDefinition) {
       }
 
       return {
-        id: `${source.id}-${index + 1}`,
+        id: buildFeedItemId(source.id, link, title, publishedAt),
         source,
         title: cleanupText(title),
         link: cleanupText(link),
+        canonicalLink: canonicalizeLink(link),
         publishedAt,
-        summary: toPlainText(summary)
+        summary: toPlainText(summary),
+        normalizedTitle: normalizeTitle(title)
       } satisfies FeedItem;
     })
     .filter((item): item is FeedItem => Boolean(item));
@@ -350,7 +364,7 @@ function parseAtomFeed(xml: string, source: SourceDefinition) {
   const entryBlocks = xml.match(/<entry\b[\s\S]*?<\/entry>/gi) ?? [];
 
   return entryBlocks
-    .map((block, index) => {
+    .map((block) => {
       const title = getFirstTagValue(block, ["title"]);
       const link = getAtomLink(block);
       const publishedRaw = getFirstTagValue(block, ["published", "updated"]);
@@ -362,15 +376,69 @@ function parseAtomFeed(xml: string, source: SourceDefinition) {
       }
 
       return {
-        id: `${source.id}-${index + 1}`,
+        id: buildFeedItemId(source.id, link, title, publishedAt),
         source,
         title: cleanupText(title),
         link,
+        canonicalLink: canonicalizeLink(link),
         publishedAt,
-        summary: toPlainText(summary)
+        summary: toPlainText(summary),
+        normalizedTitle: normalizeTitle(title)
       } satisfies FeedItem;
     })
     .filter((item): item is FeedItem => Boolean(item));
+}
+
+function dedupeFeedItems(items: FeedItem[]) {
+  const keptItems: FeedItem[] = [];
+  const seenCanonicalLinks = new Map<string, FeedItem>();
+  const seenTitles = new Map<string, FeedItem>();
+  const orderedItems = [...items].sort(compareItemsForRetention);
+  let duplicatesRemoved = 0;
+
+  for (const item of orderedItems) {
+    const existingByLink = seenCanonicalLinks.get(item.canonicalLink);
+    if (existingByLink) {
+      duplicatesRemoved += 1;
+      continue;
+    }
+
+    if (item.normalizedTitle.length >= 24) {
+      const existingByTitle = seenTitles.get(item.normalizedTitle);
+      if (existingByTitle) {
+        duplicatesRemoved += 1;
+        continue;
+      }
+    }
+
+    seenCanonicalLinks.set(item.canonicalLink, item);
+    seenTitles.set(item.normalizedTitle, item);
+    keptItems.push(item);
+  }
+
+  return {
+    items: keptItems,
+    duplicatesRemoved
+  };
+}
+
+function compareItemsForRetention(left: FeedItem, right: FeedItem) {
+  const priorityDelta = left.source.priority - right.source.priority;
+  if (priorityDelta !== 0) {
+    return priorityDelta;
+  }
+
+  const summaryDelta = right.summary.length - left.summary.length;
+  if (summaryDelta !== 0) {
+    return summaryDelta;
+  }
+
+  const publishedDelta = right.publishedAt.getTime() - left.publishedAt.getTime();
+  if (publishedDelta !== 0) {
+    return publishedDelta;
+  }
+
+  return left.title.localeCompare(right.title);
 }
 
 function getFirstTagValue(xmlBlock: string, tagNames: string[]) {
@@ -419,6 +487,61 @@ function toPlainText(value: string) {
 
 function cleanupText(value: string) {
   return decodeEntities(value).replace(/\s+/g, " ").trim();
+}
+
+function canonicalizeLink(value: string) {
+  try {
+    const url = new URL(cleanupText(value));
+    url.hash = "";
+
+    const removableParams = [
+      "ref",
+      "rss",
+      "source",
+      "feature",
+      "fbclid",
+      "gclid",
+      "mc_cid",
+      "mc_eid",
+      "mkt_tok",
+      "utm_campaign",
+      "utm_content",
+      "utm_id",
+      "utm_medium",
+      "utm_name",
+      "utm_source",
+      "utm_term"
+    ];
+
+    for (const paramName of removableParams) {
+      url.searchParams.delete(paramName);
+    }
+
+    const normalizedPath = url.pathname.replace(/\/+$/, "") || "/";
+    url.pathname = normalizedPath;
+    url.search = url.searchParams.toString() ? `?${url.searchParams.toString()}` : "";
+    return url.toString();
+  } catch {
+    return cleanupText(value);
+  }
+}
+
+function normalizeTitle(value: string) {
+  return cleanupText(value)
+    .toLowerCase()
+    .replace(/\s+[-|:]\s+[^-|:]+$/, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildFeedItemId(sourceId: string, link: string, title: string, publishedAt: Date) {
+  const digest = createHash("sha1")
+    .update(`${sourceId}|${canonicalizeLink(link)}|${normalizeTitle(title)}|${publishedAt.toISOString()}`)
+    .digest("hex")
+    .slice(0, 12);
+
+  return `${sourceId}-${digest}`;
 }
 
 function decodeEntities(value: string) {

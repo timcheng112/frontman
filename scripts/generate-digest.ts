@@ -34,7 +34,11 @@ async function main() {
     console.log(`- ${result.source.name}: ${result.items.length} recent item(s)`);
   }
 
-  const items = flattenRecentItems(results);
+  const { items, duplicatesRemoved } = flattenRecentItems(results);
+
+  if (duplicatesRemoved > 0) {
+    console.log(`- Deduped ${duplicatesRemoved} overlapping item(s) across sources`);
+  }
 
   if (items.length === 0) {
     throw new Error("No recent feed items were found. Try increasing --lookback-days or review the source feeds.");

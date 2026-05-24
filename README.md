@@ -10,7 +10,7 @@ The current implementation includes:
 - A designed homepage with hero, latest digest highlight, archive grid, and footer
 - A designed article page with a sticky reading header and collapsed article title row
 - Local image assets in `public/images/`
-- One sample digest entry in `src/content/digests/`
+- Empty-state support when `src/content/digests/` has no published issues yet
 
 ## Local development
 
@@ -20,10 +20,6 @@ npm run dev
 ```
 
 Open the local URL printed by Astro, usually `http://localhost:4321/`.
-
-Sample routes:
-
-- `http://localhost:4321/digests/2026-05-25-frontend-ai-digest/`
 
 ## Repo checks
 
@@ -38,6 +34,8 @@ This runs:
 - `npm run validate:digests`
 - `npx tsc --noEmit`
 - `npm run build`
+
+`npm run build` now clears local `.astro/` and `dist/` first so deleted digest files do not linger as stale static routes between builds.
 
 ## Digest generator MVP
 
@@ -65,8 +63,9 @@ npm run generate:digest -- --force
 
 What the generator does:
 
-- Fetches a small set of RSS/news feeds defined in `scripts/sources.ts`
+- Fetches a curated set of RSS/news feeds defined in `scripts/sources.ts`
 - Filters to recent items within the configured lookback window
+- Dedupes overlapping stories across sources using canonical links and normalized titles
 - Groups links by source
 - Writes a new Markdown file into `src/content/digests/`
 - Refuses to create a second digest in the same ISO week unless `--force` is passed
@@ -128,6 +127,7 @@ npm run generate:digest:llm -- --force
 What the LLM generator does:
 
 - uses the Phase 3 source fetcher and duplicate-week protection
+- applies the same cross-source dedupe pass before ranking
 - sends the fetched items to the OpenAI Responses API for ranking
 - asks the model to produce the final markdown body using the selected items only
 - writes Astro-compatible frontmatter plus the generated article body
@@ -149,6 +149,7 @@ Phase 5 adds scheduled GitHub Actions automation for digest generation.
 
 - `.github/workflows/generate-digest.yml`
 - `.github/workflows/deploy.yml`
+- `scripts/clean-build.ts`
 
 ### What the automation does
 

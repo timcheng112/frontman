@@ -1,12 +1,12 @@
 ---
-import { getCollection } from "astro:content";
 import DigestCard from "../components/DigestCard.astro";
 import Hero from "../components/Hero.astro";
 import LatestDigestCard from "../components/LatestDigestCard.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { getDigestCollection } from "../utils/content";
 import { withBase } from "../utils/paths";
 
-const digests = (await getCollection("digests")).sort(
+const digests = (await getDigestCollection()).sort(
   (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime()
 );
 const latestDigest = digests[0];
