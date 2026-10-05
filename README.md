@@ -1,307 +1,159 @@
-# Frontman
+<img src="./public/images/frontman-logo.png" alt="Frontman reading a newspaper about frontend and AI news" width="144" />
 
-Frontman is a lightweight Astro blog for a weekly frontend and AI engineering digest.
+# Heya, I'm Frontman! 👋
 
-## Current scope
+Your weekly frontend and AI reading companion.
 
-The current implementation includes:
+Tim built me for his own learning: a way to keep up with what's happening in frontend and AI, discover useful ideas, and find things worth trying.
+Each week, I trawl a curated set of feeds and turn the interesting finds into a digest of what changed and why it matters.
 
-- Astro static pages and content collections
-- A designed homepage with hero, latest digest highlight, archive grid, and footer
-- A designed article page with a sticky reading header and collapsed article title row
-- Local image assets in `public/images/`
-- Empty-state support when `src/content/digests/` has no published issues yet
+**[Read the weekly digest →](https://timcheng112.github.io/frontman/)**
 
-## Local development
+## A little about the writer 🎨
+
+I'm the site's editorial character, with AI generating the digest in my voice.
+I'm curious, a little playful, and very easy to distract with clever CSS, expressive interfaces, clean architecture, or a good performance win.
+I like AI tools that help us build better software, and I think understanding the fundamentals is a big part of making them useful.
+
+My guiding thought: **Good code + AI = unstoppable.**
+
+Think of me as a fellow builder sharing what caught my attention and learning alongside you.
+My personality and editorial priorities live in the [style guide](docs/frontman-editorial-style.md), with the writing instructions in the [generator prompt](prompts/frontman.md).
+
+## What's in the digest? 🗞️
+
+- Frontend platform updates, React patterns, CSS, and UI engineering.
+- Performance, architecture, design systems, and developer tooling.
+- AI tools and coding workflows with practical uses for engineers.
+- Story summaries, links to the original sources, and tips worth trying.
+
+The site has a latest-issue highlight, an archive of previous editions, and individual reading pages.
+The digest is AI-written from the fetched feed items; the source links are there for further reading and checking the details.
+
+## How an edition comes together
+
+1. **Gather:** fetch recent RSS and Atom entries from the [configured sources](scripts/sources.ts), including web.dev, MDN, the React blog, GitHub, and OpenAI.
+2. **Filter:** keep items within the lookback window and deduplicate overlapping stories across sources.
+3. **Write:** use the OpenAI Responses API to rank stories and write an issue in Frontman's voice.
+4. **Publish:** validate the Markdown, commit it to the repository, build the Astro site, and deploy to GitHub Pages.
+5. **Notify:** optionally send a Telegram notification after a new issue is deployed.
+
+The weekly workflow is scheduled for **Mondays at 01:00 UTC / 09:00 Singapore time** and can also be run manually.
+It skips generation when that ISO week already has an issue.
+
+## Built with
+
+**Astro · TypeScript · Node.js · Markdown · OpenAI API · GitHub Actions · GitHub Pages**
+
+## Run it locally
+
+Use Node.js 22.7 or later; the repository pins `22.7.0` in [.tool-versions](.tool-versions).
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open the local URL printed by Astro, usually `http://localhost:4321/`.
+Open the URL printed by Astro, usually `http://localhost:4321/`.
+The existing digest archive can be browsed locally without an API key.
 
-## Repo checks
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the local development server |
+| `npm run check` | Validate digest content, type-check scripts, and build the site |
+| `npm run build` | Write the production site to `dist/` |
+| `npm run preview` | Preview the production build locally |
+| `npm run generate:digest` | Generate a source-grouped digest without AI |
+| `npm run generate:digest:llm` | Rank stories and generate an AI-written digest |
 
-Run the full hardening pass locally:
+<details>
+<summary><strong>Generate an issue and configure weekly publishing</strong></summary>
 
-```bash
-npm run check
-```
+### Generate an issue
 
-This runs:
-
-- `npm run validate:digests`
-- `npx tsc --noEmit`
-- `npm run build`
-
-`npm run build` now clears local `.astro/` and `dist/` first so deleted digest files do not linger as stale static routes between builds.
-
-## Digest generator MVP
-
-Phase 3 adds a simple source-driven generator that fetches recent feed items and writes a Markdown digest into the Astro content collection.
-
-### Files involved
-
-- `scripts/sources.ts`
-- `scripts/generate-digest.ts`
-- `src/content/digests/`
-
-### Generate a digest
-
-```bash
-npm run generate:digest
-```
-
-Useful flags:
-
-```bash
-npm run generate:digest -- --date 2026-05-21
-npm run generate:digest -- --lookback-days 10
-npm run generate:digest -- --force
-```
-
-What the generator does:
-
-- Fetches a curated set of RSS/news feeds defined in `scripts/sources.ts`
-- Filters to recent items within the configured lookback window
-- Dedupes overlapping stories across sources using canonical links and normalized titles
-- Groups links by source
-- Writes a new Markdown file into `src/content/digests/`
-- Refuses to create a second digest in the same ISO week unless `--force` is passed
-
-### Verify the generated article
-
-1. Run `npm run generate:digest`.
-2. Run `npm run build` or `npm run dev`.
-3. Confirm a new file exists in `src/content/digests/`.
-4. Open the homepage and verify the new digest appears either as the latest issue or in the archive grid, depending on its `pubDate`.
-
-## LLM ranking and writing
-
-Phase 4 adds an OpenAI-backed generator that:
-
-- fetches the same feed items as the MVP generator
-- ranks the strongest stories with a structured editorial plan
-- writes a fuller markdown article body
-- saves the result into `src/content/digests/`
-
-### Files involved
-
-- `scripts/digest-core.ts`
-- `scripts/generate-digest-llm.ts`
-- `scripts/openai.ts`
-- `prompts/frontman.md`
-
-### Required environment variable
-
-```bash
-export OPENAI_API_KEY=your_api_key_here
-```
-
-Optional configuration:
-
-```bash
-export FRONTMAN_OPENAI_MODEL=gpt-5.4-mini
-```
-
-The Phase 4 generator defaults to `gpt-5.4-mini`.
-
-### Generate an LLM-written digest
+For an AI-written digest, set `OPENAI_API_KEY` in your shell, then run:
 
 ```bash
 npm run generate:digest:llm
 ```
 
-Useful flags:
+The local generator uses `FRONTMAN_OPENAI_MODEL` when set, otherwise `gpt-5.4-mini`.
+You can also choose a model with `--model`.
+
+For a simpler digest that groups fetched entries by source and needs no API key:
 
 ```bash
-npm run generate:digest:llm -- --date 2026-05-24
-npm run generate:digest:llm -- --skip-if-exists
-npm run generate:digest:llm -- --reasoning-effort low
-npm run generate:digest:llm -- --max-items 5
-npm run generate:digest:llm -- --model gpt-5.4-mini
-npm run generate:digest:llm -- --force
+npm run generate:digest
 ```
 
-What the LLM generator does:
+Both generators write Markdown to `src/content/digests/`.
+After generating an issue, run `npm run check` and open it locally to review the result.
 
-- uses the Phase 3 source fetcher and duplicate-week protection
-- applies the same cross-source dedupe pass before ranking
-- sends the fetched items to the OpenAI Responses API for ranking
-- asks the model to produce the final markdown body using the selected items only
-- writes Astro-compatible frontmatter plus the generated article body
-- supports `--skip-if-exists` for automation-safe reruns
+| Option | Purpose |
+| --- | --- |
+| `--date YYYY-MM-DD` | Set the issue date; defaults to today |
+| `--lookback-days 10` | Adjust the source lookback window; defaults to 7 days |
+| `--skip-if-exists` | Exit successfully if that ISO week already has an issue |
+| `--force` | Bypass the existing-week guard for an intentional regeneration |
+| `--model MODEL` | Choose the model for the AI generator |
+| `--reasoning-effort low` | Set reasoning effort for the AI generator; defaults to `low` |
+| `--max-items 5` | Limit the AI generator's selected stories; defaults to 5, with a minimum of 3 |
 
-### Verify the LLM article
+Pass options after `--`, for example:
 
-1. Set `OPENAI_API_KEY`.
-2. Run `npm run generate:digest:llm`.
-3. Run `npm run build` or `npm run dev`.
-4. Confirm a new file exists in `src/content/digests/`.
-5. Open the homepage and verify the generated issue appears in the digest list.
+```bash
+npm run generate:digest:llm -- --lookback-days 10 --max-items 5 --skip-if-exists
+```
 
-## Weekly automation
+Keep one issue per ISO week.
+Content validation still rejects duplicate weeks if `--force` creates an additional issue.
 
-Phase 5 adds scheduled GitHub Actions automation for digest generation.
+### Weekly automation
 
-### Files involved
+The [Generate Weekly Digest workflow](.github/workflows/generate-digest.yml) generates, validates, commits, builds, and deploys new issues.
+It also supports **Actions → Generate Weekly Digest → Run workflow** for a manual run.
 
-- `.github/workflows/generate-digest.yml`
-- `.github/workflows/deploy.yml`
-- `scripts/clean-build.ts`
+Add `OPENAI_API_KEY` as a repository secret to enable AI generation.
+The workflow passes a `--model` argument, currently defaulting to `gpt-5.4-mini`; use the manual run's `model` input to override it, or update the workflow default for scheduled runs.
+That explicit argument takes precedence over `FRONTMAN_OPENAI_MODEL`.
 
-### What the automation does
-
-- runs every Monday at `01:00 UTC`
-- supports manual runs through `workflow_dispatch`
-- installs dependencies, generates the weekly LLM digest, and commits it back to `main`
-- builds and deploys the updated Astro site in the same workflow after the digest commit is pushed
-- no-ops cleanly if the same ISO week already has a digest file
-
-### Required GitHub configuration
-
-Repository secret:
-
-- `OPENAI_API_KEY`
-
-Optional repository variable:
-
-- `FRONTMAN_OPENAI_MODEL`
-
-The workflow defaults to `gpt-5.4-mini` if that variable is not set.
-
-### Manual verification
-
-1. Push the repo changes to GitHub.
-2. Add the `OPENAI_API_KEY` repository secret.
-3. Open `Actions` in GitHub.
-4. Run `Generate Weekly Digest`.
-5. Optionally provide a `date` input such as `2026-05-24` and set `force` only if you intentionally want to overwrite the duplicate-week safeguard.
-6. Confirm the workflow commits a new digest file to `main`.
-7. Confirm the `Generate Weekly Digest` workflow completes its build and deploy jobs and publishes the updated site.
-
-## Telegram notification
-
-Phase 6 adds a Telegram notification after a successful automated digest deploy.
-
-### Files involved
-
-- `scripts/send-telegram-notification.ts`
-- `.github/workflows/generate-digest.yml`
-
-### Required GitHub configuration
-
-Repository secrets:
+Optional repository secrets enable Telegram notifications:
 
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_CHAT_ID`
 
-The notification step will skip cleanly if either secret is missing.
+Notifications include the issue title, date, description, and live link.
+The notification step is skipped if either secret is missing.
+The local helper, `npm run notify:telegram`, also skips when those credentials are absent; sending a notification additionally requires `FRONTMAN_DIGEST_PATH` and `FRONTMAN_DIGEST_URL`.
 
-### What the notification does
+### GitHub Pages
 
-- runs only after the weekly digest workflow generates a new digest and deploys the updated site
-- reads the generated digest frontmatter
-- builds a Telegram message with the digest title, publication date, description, and live URL
-- sends the message with the Telegram Bot API using `sendMessage` and `parse_mode=HTML`
+Under **Settings → Pages → Build and deployment**, select **GitHub Actions**.
+The [deployment workflow](.github/workflows/deploy.yml) publishes pushes to `main`, and the weekly generation workflow deploys its own new issue after committing it.
 
-### Local verification
+The [Astro configuration](astro.config.mjs) derives the site URL and base path from the repository in GitHub Actions.
+For this repository, the public URL is **https://timcheng112.github.io/frontman/**.
+Standard GitHub Pages project sites need no additional URL variables.
 
-The helper script can be exercised locally without sending a real message by leaving the Telegram environment variables unset:
+For a custom domain, add `public/CNAME` and set the repository variable `SITE_URL` to the full site URL.
+Use `BASE_PATH` only when a specific subpath is needed.
 
-```bash
-npm run notify:telegram
-```
+### Checks
 
-Expected output:
+`npm run check` validates frontmatter, publication dates, duplicate weeks, and article structure, then runs TypeScript checking and a production build.
+The [CI workflow](.github/workflows/ci.yml) runs the same checks on pushes to `main` and pull requests.
+The build clears `.astro/` and `dist/` first so removed issues do not leave stale pages behind.
 
-- It prints that Telegram notification is being skipped because the bot token or chat ID is not configured.
+</details>
 
-### GitHub verification
+## Around the repository
 
-1. Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to repository secrets.
-2. Run `Generate Weekly Digest` from GitHub Actions with a test date if needed.
-3. Confirm the workflow completes `generate`, `build`, `deploy`, and `notify`.
-4. Confirm the target Telegram chat receives the digest notification with a working digest link.
-
-## Polish and hardening
-
-Phase 7 adds validation and CI guardrails around the content and automation pipeline.
-
-### Files involved
-
-- `scripts/validate-digests.ts`
-- `.github/workflows/ci.yml`
-- `.github/workflows/generate-digest.yml`
-
-### What the hardening layer does
-
-- validates every digest file in `src/content/digests/`
-- checks for required frontmatter fields
-- enforces filename date and `pubDate` alignment
-- prevents duplicate ISO-week digest files
-- checks for the expected article intro heading
-- runs CI on pushes and pull requests
-- validates generated content during the scheduled digest workflow before commit and deploy
-
-### How to verify
-
-1. Run `npm run check`.
-2. Confirm digest validation passes.
-3. Confirm type-checking passes.
-4. Confirm the Astro build passes.
-5. Push a branch or open a pull request and confirm the `CI` workflow runs the same checks in GitHub Actions.
-
-## Production build
-
-```bash
-npm run build
-```
-
-The generated static site will be written to `dist/`.
-
-## GitHub Pages deployment
-
-This project is configured to deploy with GitHub Pages using GitHub Actions.
-
-### Files involved
-
-- `astro.config.mjs`
-- `.github/workflows/deploy.yml`
-
-### Repo settings
-
-1. Push the repository to GitHub.
-2. In GitHub, open `Settings` → `Pages`.
-3. Under `Build and deployment`, set `Source` to `GitHub Actions`.
-4. Make sure your default deployment branch matches the workflow trigger, currently `main`.
-
-### URL configuration
-
-Project site:
-- If the repository is something like `https://github.com/<username>/frontman`, the workflow build will automatically deploy the site to `https://<username>.github.io/frontman/`.
-- In that case, Astro will automatically set `base` to `/<repo-name>` during the GitHub Actions build.
-
-User or organization root site:
-- If the repository name is exactly `<username>.github.io`, Astro will deploy at `https://<username>.github.io/`.
-- In that case, no `base` path is used.
-
-Custom domain later:
-- Add `public/CNAME` with your domain.
-- Set the repository variable `SITE_URL` to your full site URL, for example `https://frontman.example.com`.
-- Leave `BASE_PATH` empty unless you intentionally want to deploy under a subpath.
-
-Optional repository variables:
-- `SITE_URL`
-- `BASE_PATH`
-
-By default, you do not need either variable for a standard GitHub Pages project site.
-
-## Project structure
-
-- `src/pages/` Astro routes
-- `src/components/` reusable Astro UI components
-- `src/layouts/` shared page layouts
-- `src/content/digests/` Markdown digest entries
-- `public/images/` Frontman image assets
+| Path | What's inside |
+| --- | --- |
+| `src/pages/`, `src/components/`, `src/layouts/` | Astro pages, UI components, and reading layouts |
+| `src/content/digests/` | Published Markdown issues |
+| `scripts/` | Feed collection, generation, validation, and notification scripts |
+| `prompts/frontman.md` | The operational prompt used to rank and write issues |
+| `docs/frontman-editorial-style.md` | Frontman's personality, beliefs, and editorial priorities |
+| `public/images/` | Character illustrations and branding |
+| `.github/workflows/` | Weekly generation, CI, and GitHub Pages deployment |
